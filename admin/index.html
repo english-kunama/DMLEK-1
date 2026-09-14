@@ -646,7 +646,7 @@
             if (!tb) return;
             tb.innerHTML = docs.length===0
                 ? '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem">No articles found</td></tr>'
-                : docs.map(function(a){ return '<tr><td class="checkbox-cell"><input type="checkbox" data-id="'+a.id+'" onchange="updateSelection(this)"></td><td><div class="item-title">'+a.title+'</div><div class="item-excerpt">'+(a.excerpt||'')+'</div></td><td><span class="badge badge-'+(a.language||'english')+'">'+(a.language||'english')+'</span></td><td><span class="badge badge-'+(a.status||'draft')+'">'+(a.status||'draft')+'</span></td><td>'+a.createdAt.toLocaleDateString()+'</td><td><div class="actions"><button class="action-btn" onclick="editArticle(''+a.id+'')" title="Edit">&#x270F;&#xFE0F;</button><button class="action-btn" onclick="window.open('../pages/article.html?id='+a.id+'','_blank')" title="View">&#x1F441;&#xFE0F;</button><button class="action-btn delete" onclick="deleteItem('articles',''+a.id+'')" title="Delete">&#x1F5D1;&#xFE0F;</button></div></td></tr>'; }).join('');
+                : docs.map(function(a){ return `<tr><td class="checkbox-cell"><input type="checkbox" data-id="${a.id}" onchange="updateSelection(this)"></td><td><div class="item-title">${a.title}</div><div class="item-excerpt">${a.excerpt||''}</div></td><td><span class="badge badge-${a.language||'english'}">${a.language||'english'}</span></td><td><span class="badge badge-${a.status||'draft'}">${a.status||'draft'}</span></td><td>${a.createdAt.toLocaleDateString()}</td><td><div class="actions"><button class="action-btn" onclick="editArticle('${a.id}')" title="Edit">&#x270F;&#xFE0F;</button><button class="action-btn" onclick="window.open('../pages/article.html?id=${a.id}','_blank')" title="View">&#x1F441;&#xFE0F;</button><button class="action-btn delete" onclick="deleteItem('articles','${a.id}')" title="Delete">&#x1F5D1;&#xFE0F;</button></div></td></tr>`; }).join('');
         } catch(err) { toast('Error loading articles: '+err.message,'error'); }
     }
 
@@ -769,7 +769,7 @@
             if (!tb) return;
             tb.innerHTML = items.length===0
                 ? '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:2rem">No videos yet</td></tr>'
-                : items.map(function(m){ return '<tr><td><div class="item-title">'+m.title+'</div><div class="item-excerpt">'+(m.youtubeUrl||m.url||'')+'</div></td><td><span class="badge badge-'+(m.language||'english')+'">'+(m.language||'english')+'</span></td><td>'+m.createdAt.toLocaleDateString()+'</td><td><div class="actions"><button class="action-btn delete" onclick="deleteItem('media',''+m.id+'')">&#x1F5D1;&#xFE0F;</button></div></td></tr>'; }).join('');
+                : items.map(function(m){ return `<tr><td><div class="item-title">${m.title}</div><div class="item-excerpt">${m.youtubeUrl||m.url||''}</div></td><td><span class="badge badge-${m.language||'english'}">${m.language||'english'}</span></td><td>${m.createdAt.toLocaleDateString()}</td><td><div class="actions"><button class="action-btn delete" onclick="deleteItem('media','${m.id}')">&#x1F5D1;&#xFE0F;</button></div></td></tr>`; }).join('');
         } catch(err) { toast('Error loading media: '+err.message,'error'); }
     }
 
@@ -806,7 +806,7 @@
             if (!tb) return;
             tb.innerHTML = docs.length===0
                 ? '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem">No documents yet</td></tr>'
-                : docs.map(function(d){ var sc=d.status==='published'?'badge-published':'badge-draft'; return '<tr><td><div class="item-title">'+d.title+'</div><div class="item-excerpt">'+(d.excerpt||'')+'</div></td><td><span class="badge badge-'+(d.language||'english')+'">'+(d.language||'english')+'</span></td><td><span class="badge '+sc+'">'+(d.status||'draft')+'</span></td><td>'+d.createdAt.toLocaleDateString()+'</td><td><div class="actions"><button class="action-btn" onclick="editDocument(''+d.id+'')" title="Edit">&#x270F;&#xFE0F;</button><button class="action-btn" onclick="window.open('../pages/document.html?id='+d.id+'','_blank')" title="View">&#x1F441;&#xFE0F;</button><button class="action-btn delete" onclick="deleteItem('documents',''+d.id+'')" title="Delete">&#x1F5D1;&#xFE0F;</button></div></td></tr>'; }).join('');
+                : docs.map(function(d){ var sc=d.status==='published'?'badge-published':'badge-draft'; return `<tr><td><div class="item-title">${d.title}</div><div class="item-excerpt">${d.excerpt||''}</div></td><td><span class="badge badge-${d.language||'english'}">${d.language||'english'}</span></td><td><span class="badge ${sc}">${d.status||'draft'}</span></td><td>${d.createdAt.toLocaleDateString()}</td><td><div class="actions"><button class="action-btn" onclick="editDocument('${d.id}')" title="Edit">&#x270F;&#xFE0F;</button><button class="action-btn" onclick="window.open('../pages/document.html?id=${d.id}','_blank')" title="View">&#x1F441;&#xFE0F;</button><button class="action-btn delete" onclick="deleteItem('documents','${d.id}')" title="Delete">&#x1F5D1;&#xFE0F;</button></div></td></tr>`; }).join('');
             var fl = document.getElementById('filterDocLang');
             var fs = document.getElementById('filterDocStatus');
             if (fl && !fl._bound) { fl.addEventListener('change',loadDocuments); fl._bound=true; }
@@ -886,7 +886,7 @@
             if (!tb) return;
             tb.innerHTML = events.length===0
                 ? '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:2rem">No events yet</td></tr>'
-                : events.map(function(d){ return '<tr><td><div class="item-title">'+d.title+'</div><div class="item-excerpt">'+(d.description||'')+'</div></td><td>'+d.date.toLocaleDateString()+'</td><td>'+(d.location||'-')+'</td><td><div class="actions"><button class="action-btn" onclick="editEvent(''+d.id+'')" title="Edit">&#x270F;&#xFE0F;</button><button class="action-btn delete" onclick="deleteItem('events',''+d.id+'')" title="Delete">&#x1F5D1;&#xFE0F;</button></div></td></tr>'; }).join('');
+                : events.map(function(d){ return `<tr><td><div class="item-title">${d.title}</div><div class="item-excerpt">${d.description||''}</div></td><td>${d.date.toLocaleDateString()}</td><td>${d.location||'-'}</td><td><div class="actions"><button class="action-btn" onclick="editEvent('${d.id}')" title="Edit">&#x270F;&#xFE0F;</button><button class="action-btn delete" onclick="deleteItem('events','${d.id}')" title="Delete">&#x1F5D1;&#xFE0F;</button></div></td></tr>`; }).join('');
         } catch(err) { toast('Error loading events: '+err.message,'error'); }
     }
 
@@ -930,7 +930,7 @@
             if (!grid) return;
             grid.innerHTML = photos.length===0
                 ? '<p style="color:var(--muted);grid-column:1/-1;text-align:center;padding:2rem;">No photos yet.</p>'
-                : photos.map(function(p){ return '<div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--border)"><img src="'+p.image+'" style="width:100%;height:140px;object-fit:cover;display:block;" loading="lazy"><div style="position:absolute;top:6px;right:6px"><button onclick="deleteItem('photos',''+p.id+'')" style="width:28px;height:28px;border-radius:6px;border:none;background:rgba(192,39,29,0.9);color:white;cursor:pointer;">&#x1F5D1;</button></div>'+(p.title?'<div style="padding:6px 8px;font-size:.78rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+p.title+'</div>':'')+'</div>'; }).join('');
+                : photos.map(function(p){ return `<div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--border)"><img src="${p.image}" style="width:100%;height:140px;object-fit:cover;display:block;" loading="lazy"><div style="position:absolute;top:6px;right:6px"><button onclick="deleteItem('photos','${p.id}')" style="width:28px;height:28px;border-radius:6px;border:none;background:rgba(192,39,29,0.9);color:white;cursor:pointer;">&#x1F5D1;</button></div>${p.title?`<div style="padding:6px 8px;font-size:.78rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.title}</div>`:''}</div>`; }).join('');
         } catch(err) { toast('Error loading photos: '+err.message,'error'); }
     }
 
@@ -990,7 +990,7 @@
                 : msgs.map(function(m){
                     var unread=!m.read;
                     var ts=unread?'font-weight:700':'';
-                    return '<tr style="'+(unread?'background:rgba(192,39,29,0.04)':'')+'"><td><div class="item-title" style="'+ts+'">'+(m.name||'—')+'</div></td><td style="font-size:.85rem">'+(m.email||'—')+'</td><td><div class="item-excerpt" style="max-width:200px;'+ts+'">'+(m.subject||m.message?.slice(0,60)||'—')+'</div></td><td style="font-size:.82rem">'+m.sentAt.toLocaleDateString()+'</td><td>'+(unread?'<span style="background:rgba(192,39,29,0.15);color:#C0271D;padding:.2rem .5rem;border-radius:4px;font-size:.75rem;font-weight:700;">New</span>':'<span style="color:var(--muted);font-size:.78rem">Read</span>')+'</td><td><div class="actions"><button class="action-btn" onclick="viewMessage(''+m.id+'')" title="View">&#x1F441;&#xFE0F;</button><button class="action-btn delete" onclick="deleteItem('messages',''+m.id+'')" title="Delete">&#x1F5D1;&#xFE0F;</button></div></td></tr>';
+                    return `<tr style="${unread?'background:rgba(192,39,29,0.04)':''}"><td><div class="item-title" style="${ts}">${m.name||'—'}</div></td><td style="font-size:.85rem">${m.email||'—'}</td><td><div class="item-excerpt" style="max-width:200px;${ts}">${m.subject||m.message?.slice(0,60)||'—'}</div></td><td style="font-size:.82rem">${m.sentAt.toLocaleDateString()}</td><td>${unread?'<span style="background:rgba(192,39,29,0.15);color:#C0271D;padding:.2rem .5rem;border-radius:4px;font-size:.75rem;font-weight:700;">New</span>':'<span style="color:var(--muted);font-size:.78rem">Read</span>'}</td><td><div class="actions"><button class="action-btn" onclick="viewMessage('${m.id}')" title="View">&#x1F441;&#xFE0F;</button><button class="action-btn delete" onclick="deleteItem('messages','${m.id}')" title="Delete">&#x1F5D1;&#xFE0F;</button></div></td></tr>`;
                 }).join('');
         } catch(err) { toast('Error loading messages: '+err.message,'error'); }
     }
@@ -1000,11 +1000,11 @@
         if (!snap.exists) return;
         var m = snap.data(), sentAt = m.sentAt?.toDate()||new Date();
         if (!m.read) await db.collection('messages').doc(id).update({read:true});
-        alert('From: '+(m.name||'—')+' <'+(m.email||'—')+'>
-Subject: '+(m.subject||'—')+'
-Date: '+sentAt.toLocaleString()+'
+        alert(`From: ${m.name||'—'} <${m.email||'—'}>
+Subject: ${m.subject||'—'}
+Date: ${sentAt.toLocaleString()}
 
-'+(m.message||'—'));
+${m.message||'—'}`);
         loadMessages(); loadDashboard();
     }
 
@@ -1017,7 +1017,7 @@ Date: '+sentAt.toLocaleString()+'
             if (!tb) return;
             tb.innerHTML = subs.length===0
                 ? '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:2rem">No subscribers yet</td></tr>'
-                : subs.map(function(s){ return '<tr><td style="font-weight:500">'+s.email+'</td><td style="font-size:.85rem">'+(s.source||'—')+'</td><td style="font-size:.85rem">'+s.subscribedAt.toLocaleDateString()+'</td><td><div class="actions"><button class="action-btn delete" onclick="deleteItem('subscribers',''+s.id+'')" title="Remove">&#x1F5D1;&#xFE0F;</button></div></td></tr>'; }).join('');
+                : subs.map(function(s){ return `<tr><td style="font-weight:500">${s.email}</td><td style="font-size:.85rem">${s.source||'—'}</td><td style="font-size:.85rem">${s.subscribedAt.toLocaleDateString()}</td><td><div class="actions"><button class="action-btn delete" onclick="deleteItem('subscribers','${s.id}')" title="Remove">&#x1F5D1;&#xFE0F;</button></div></td></tr>`; }).join('');
         } catch(err) { toast('Error loading subscribers: '+err.message,'error'); }
     }
 
@@ -1025,8 +1025,7 @@ Date: '+sentAt.toLocaleString()+'
         var snap = await db.collection('subscribers').orderBy('subscribedAt','desc').get();
         var rows = ['Email,Source,Date'];
         snap.docs.forEach(function(d){ var s=d.data(),dt=s.subscribedAt?.toDate()||new Date(); rows.push(s.email+','+(s.source||'')+','+dt.toISOString().split('T')[0]); });
-        var blob = new Blob([rows.join('
-')],{type:'text/csv'});
+        var blob = new Blob([rows.join('\n')],{type:'text/csv'});
         var url  = URL.createObjectURL(blob);
         var a    = document.createElement('a');
         a.href=url; a.download='dmlek-subscribers-'+new Date().toISOString().split('T')[0]+'.csv';
