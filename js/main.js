@@ -4,12 +4,14 @@
    ======================================== */
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCFUzAQucspGeL9e580ha0t9ajmibtZYVU",
-    authDomain: "dmlek-5e41d.firebaseapp.com",
-    projectId: "dmlek-5e41d",
-    storageBucket: "dmlek-5e41d.firebasestorage.app",
-    messagingSenderId: "776258229369",
-    appId: "1:776258229369:web:19b757e38f79156f91f0a8"
+    apiKey: "AIzaSyD6YU7dz2HNGXSpxa9t-wu7ckkbq7cKuP8",
+      authDomain: "dmlek-f8f72.firebaseapp.com",
+      databaseURL: "https://dmlek-f8f72-default-rtdb.firebaseio.com",
+      projectId: "dmlek-f8f72",
+      storageBucket: "dmlek-f8f72.firebasestorage.app",
+      messagingSenderId: "992609136555",
+      appId: "1:992609136555:web:7e2a8675c0f681600aacee",
+      measurementId: "G-QVD8FSLT1G"
 };
 
 let db, auth;
