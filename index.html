@@ -442,19 +442,22 @@
                 btn.disabled = true;
                 btn.textContent = 'Subscribing...';
                 try {
-                    var existing = await db.collection('subscribers').where('email', '==', email).limit(1).get();
-                    if (!existing.empty) {
-                        showToast("You're already subscribed — thank you!", 'success');
-                    } else {
-                        await db.collection('subscribers').add({
-                            email: email,
-                            subscribedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                            source: 'homepage'
-                        });
-                        showToast('Thank you for subscribing!', 'success');
-                    }
+                    // Email is the document ID, so duplicates collapse without
+                    // needing public read access to the subscribers list.
+                    await db.collection('subscribers').doc(email).set({
+                        email: email,
+                        subscribedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        source: 'homepage'
+                    });
+                    showToast('Thank you for subscribing!', 'success');
                     this.reset();
                 } catch (err) {
+                    if (err && err.code === 'permission-denied') {
+                        // Rules allow creating but not overwriting: already subscribed.
+                        showToast("You're already subscribed — thank you!", 'success');
+                        this.reset();
+                        return;
+                    }
                     console.error('Subscribe error:', err);
                     showToast('Something went wrong. Please try again.', 'error');
                 } finally {
