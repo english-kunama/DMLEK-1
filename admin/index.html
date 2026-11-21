@@ -22,7 +22,7 @@
         .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.75rem 1.25rem;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer;border:none;transition:all .2s}
         .btn-primary{background:var(--primary);color:#fff;width:100%}.btn-primary:hover{background:var(--primary-dark)}
         .btn-secondary{background:var(--hover);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{border-color:var(--primary);color:var(--primary)}
-        .btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:#DC2626}.btn-sm{padding:.5rem .75rem;font-size:.8rem}
+        .btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:#DC2626}.btn-sm{padding:.5rem .75rem;font-size:.8rem}.header .btn-primary{width:auto}
         
         .divider{display:flex;align-items:center;margin:1.5rem 0;color:var(--muted);font-size:.8rem}
         .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}.divider span{padding:0 1rem}
@@ -163,7 +163,7 @@
                     </div>
                     <div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem">
                         <div class="chart-card"><div class="chart-title">Articles by Language</div><div class="chart-container" id="langChart"></div><div class="chart-labels" id="langLabels"></div></div>
-                        <div class="table-card"><div class="table-header"><h3 class="table-title">Quick Actions</h3></div><div style="padding:1rem"><button class="btn btn-secondary btn-sm" style="width:100%;margin-bottom:.5rem" onclick="openArticleModal()">+ New Article</button><button class="btn btn-secondary btn-sm" style="width:100%;margin-bottom:.5rem" onclick="openModal('mediaModal')">+ New Media</button><button class="btn btn-secondary btn-sm" style="width:100%;margin-bottom:.5rem" onclick="openModal('eventModal')">+ New Event</button><button class="btn btn-secondary btn-sm" style="width:100%;margin-bottom:.5rem" onclick="openModal('photoModal')">+ New Photo</button><button class="btn btn-secondary btn-sm" style="width:100%" onclick="exportData()">Export Data</button></div></div>
+                        <div class="table-card"><div class="table-header"><h3 class="table-title">Quick Actions</h3></div><div style="padding:1rem"><button class="btn btn-secondary btn-sm" style="width:100%;margin-bottom:.5rem" onclick="openArticleModal()">+ New Article</button><button class="btn btn-secondary btn-sm" style="width:100%;margin-bottom:.5rem" onclick="openMediaModal()">+ New Media</button><button class="btn btn-secondary btn-sm" style="width:100%;margin-bottom:.5rem" onclick="openEventModal()">+ New Event</button><button class="btn btn-secondary btn-sm" style="width:100%;margin-bottom:.5rem" onclick="openModal('photoModal')">+ New Photo</button><button class="btn btn-secondary btn-sm" style="width:100%" onclick="exportData()">Export Data</button></div></div>
                     </div>
                     <div class="table-card" style="margin-top:1.5rem"><div class="table-header"><h3 class="table-title">Recent Articles</h3></div><table><thead><tr><th>Title</th><th>Language</th><th>Status</th><th>Date</th></tr></thead><tbody id="recentArticles"><tr><td colspan="4" style="text-align:center;color:var(--muted);padding:2rem">Loading...</td></tr></tbody></table></div>
                 </div>
@@ -418,18 +418,61 @@
     var db, auth;
     try {
         firebase.initializeApp({
-            apiKey:"AIzaSyCFUzAQucspGeL9e580ha0t9ajmibtZYVU",
-            authDomain:"dmlek-5e41d.firebaseapp.com",
-            projectId:"dmlek-5e41d",
-            storageBucket:"dmlek-5e41d.firebasestorage.app",
-            messagingSenderId:"776258229369",
-            appId:"1:776258229369:web:19b757e38f79156f91f0a8"
+            apiKey: "AIzaSyBcNkkVaAjGmgyChgLjEGP1FakAvcDQO8k",
+            authDomain: "dmlek-2a630.firebaseapp.com",
+            databaseURL: "https://dmlek-2a630-default-rtdb.firebaseio.com",
+            projectId: "dmlek-2a630",
+            storageBucket: "dmlek-2a630.firebasestorage.app",
+            messagingSenderId: "77214004436",
+            appId: "1:77214004436:web:39d0b2d13dbb08b5bf3741",
+            measurementId: "G-HPD5C6SCV6"
         });
         auth = firebase.auth();
         db   = firebase.firestore();
     } catch(e) {
         document.getElementById('authError').textContent = 'Firebase init failed: ' + e.message;
         document.getElementById('authError').style.display = 'block';
+    }
+
+    if (location.protocol === 'file:') {
+        showAuthError('This page was opened as a file (file://). Firebase login only works over http/https — open it from your website or a local server instead.');
+    }
+
+    // Escape text before putting it into the page (messages/subscribers come from the public site)
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+            return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+        });
+    }
+
+    // Shrink an uploaded image so the Firestore document stays under its 1 MB limit
+    function compressImage(file, maxSize, quality, cb) {
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+            var img = new Image();
+            img.onload = function() {
+                var w = img.width, h = img.height;
+                if (w > maxSize || h > maxSize) {
+                    if (w > h) { h = Math.round(h * (maxSize / w)); w = maxSize; }
+                    else       { w = Math.round(w * (maxSize / h)); h = maxSize; }
+                }
+                var canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                var data = canvas.toDataURL('image/jpeg', quality);
+                if (data.length > 900000) data = canvas.toDataURL('image/jpeg', 0.6);
+                cb(data);
+            };
+            img.onerror = function() { toast('Could not read that image file', 'error'); };
+            img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function permHint(err) {
+        return (err && err.code === 'permission-denied')
+            ? ' — Firestore security rules are blocking this. Check Firebase Console → Firestore → Rules.'
+            : '';
     }
 
     // ── State ────────────────────────────────────────────────────────────────
@@ -487,7 +530,9 @@
                         'auth/too-many-requests':     'Too many attempts — wait a few minutes.',
                         'auth/user-disabled':         'This account has been disabled.',
                         'auth/network-request-failed':'Network error — check your connection.',
-                        'auth/operation-not-allowed': 'Email/password login is not enabled. Go to Firebase Console → Authentication → Sign-in methods and enable it.'
+                        'auth/operation-not-allowed': 'Email/password login is not enabled. Go to Firebase Console → Authentication → Sign-in methods and enable it.',
+                        'auth/unauthorized-domain':   'This website address is not authorized. In Firebase Console → Authentication → Settings → Authorized domains, add: ' + location.hostname,
+                        'auth/operation-not-supported-in-this-environment': 'The admin page must be opened from a web server (http/https), not by double-clicking the file.'
                     };
                     errEl.textContent = msgs[err.code] || ('Login failed: ' + err.message);
                     errEl.style.display = 'block';
@@ -561,9 +606,9 @@
     if (anb) {
         anb.addEventListener('click', function() {
             if (currentPage === 'articles' || currentPage === 'dashboard') openArticleModal();
-            else if (currentPage === 'media')       openModal('mediaModal');
+            else if (currentPage === 'media')       openMediaModal();
             else if (currentPage === 'documents')   openDocumentModal();
-            else if (currentPage === 'events')      openModal('eventModal');
+            else if (currentPage === 'events')      openEventModal();
             else if (currentPage === 'photos')      openPhotoModal();
         });
     }
@@ -591,7 +636,15 @@
     async function loadDashboard() {
         try {
             var cols = ['articles','media','documents','events','photos','messages','subscribers'];
-            var snaps = await Promise.all(cols.map(function(c) { return db.collection(c).get(); }));
+            var failed = [];
+            var snaps = await Promise.all(cols.map(function(c) {
+                return db.collection(c).get().catch(function(err) {
+                    console.error('Could not load ' + c + ':', err);
+                    failed.push(c + (err.code ? ' (' + err.code + ')' : ''));
+                    return { size: 0, docs: [] };
+                });
+            }));
+            if (failed.length) toast('Could not load: ' + failed.join(', ') + '. Check Firestore rules.', 'error');
             var counts = {};
             cols.forEach(function(c, i) { counts[c] = snaps[i].size; });
 
@@ -624,10 +677,10 @@
             var ra = document.getElementById('recentArticles');
             if (ra) ra.innerHTML = recent.length===0
                 ? '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:2rem">No articles yet. Click “Add New” to create one.</td></tr>'
-                : recent.map(function(d){ return '<tr><td><div class="item-title">'+d.title+'</div></td><td><span class="badge badge-'+(d.language||'english')+'">'+(d.language||'english')+'</span></td><td><span class="badge badge-'+(d.status||'draft')+'">'+(d.status||'draft')+'</span></td><td>'+d.createdAt.toLocaleDateString()+'</td></tr>'; }).join('');
+                : recent.map(function(d){ return '<tr><td><div class="item-title">'+esc(d.title)+'</div></td><td><span class="badge badge-'+(d.language||'english')+'">'+(d.language||'english')+'</span></td><td><span class="badge badge-'+(d.status||'draft')+'">'+(d.status||'draft')+'</span></td><td>'+d.createdAt.toLocaleDateString()+'</td></tr>'; }).join('');
         } catch(err) {
             console.error('Dashboard error:', err);
-            toast('Dashboard load error: ' + err.message, 'error');
+            toast('Dashboard load error: ' + err.message + permHint(err), 'error');
         }
     }
 
@@ -646,8 +699,8 @@
             if (!tb) return;
             tb.innerHTML = docs.length===0
                 ? '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem">No articles found</td></tr>'
-                : docs.map(function(a){ return `<tr><td class="checkbox-cell"><input type="checkbox" data-id="${a.id}" onchange="updateSelection(this)"></td><td><div class="item-title">${a.title}</div><div class="item-excerpt">${a.excerpt||''}</div></td><td><span class="badge badge-${a.language||'english'}">${a.language||'english'}</span></td><td><span class="badge badge-${a.status||'draft'}">${a.status||'draft'}</span></td><td>${a.createdAt.toLocaleDateString()}</td><td><div class="actions"><button class="action-btn" onclick="editArticle('${a.id}')" title="Edit">&#x270F;&#xFE0F;</button><button class="action-btn" onclick="window.open('../pages/article.html?id=${a.id}','_blank')" title="View">&#x1F441;&#xFE0F;</button><button class="action-btn delete" onclick="deleteItem('articles','${a.id}')" title="Delete">&#x1F5D1;&#xFE0F;</button></div></td></tr>`; }).join('');
-        } catch(err) { toast('Error loading articles: '+err.message,'error'); }
+                : docs.map(function(a){ return '<tr><td class="checkbox-cell"><input type="checkbox" data-id="'+a.id+'" onchange="updateSelection(this)"></td><td><div class="item-title">'+esc(a.title)+'</div><div class="item-excerpt">'+esc(a.excerpt||'')+'</div></td><td><span class="badge badge-'+(a.language||'english')+'">'+(a.language||'english')+'</span></td><td><span class="badge badge-'+(a.status||'draft')+'">'+(a.status||'draft')+'</span></td><td>'+a.createdAt.toLocaleDateString()+'</td><td><div class="actions"><button class="action-btn" onclick="editArticle(\''+a.id+'\')" title="Edit">&#x270F;&#xFE0F;</button><button class="action-btn" onclick="window.open(\'../pages/article.html?id='+a.id+'\',\'_blank\')" title="View">&#x1F441;&#xFE0F;</button><button class="action-btn delete" onclick="deleteItem(\'articles\',\''+a.id+'\')" title="Delete">&#x1F5D1;&#xFE0F;</button></div></td></tr>'; }).join('');
+        } catch(err) { toast('Error loading articles: '+err.message+permHint(err),'error'); }
     }
 
     var flEl = document.getElementById('filterLang');
@@ -689,7 +742,7 @@
             }
             openModal('articleModal');
             setupAutoSave();
-        } catch(err) { toast('Error loading article: '+err.message,'error'); }
+        } catch(err) { toast('Error loading article: '+err.message+permHint(err),'error'); }
     }
 
     async function saveArticle() {
@@ -712,7 +765,7 @@
             toast('Saved!','success');
             loadArticles();
             loadDashboard();
-        } catch(err) { toast('Error: '+err.message,'error'); }
+        } catch(err) { toast('Error: '+err.message+permHint(err),'error'); }
     }
 
     function setupAutoSave() {
@@ -730,13 +783,17 @@
 
     function handleImageUpload(e) {
         var file = e.target.files[0]; if(!file) return;
-        var reader = new FileReader();
-        reader.onload = function(ev) {
+        compressImage(file, 1200, 0.8, function(data) {
             document.getElementById('imageUpload').classList.add('has-image');
-            document.getElementById('imageUploadText').innerHTML = '<img src="'+ev.target.result+'" alt="Preview">';
-            currentImageUrl = ev.target.result;
-        };
-        reader.readAsDataURL(file);
+            document.getElementById('imageUploadText').innerHTML = '<img src="'+data+'" alt="Preview">';
+            currentImageUrl = data;
+        });
+        e.target.value = '';
+    }
+
+    function insertLink() {
+        var url = prompt('Link URL (https://...)');
+        if (url) execCmd('createLink', url);
     }
 
     function updateSelection(cb) { if(cb.checked) selectedItems.add(cb.dataset.id); else selectedItems.delete(cb.dataset.id); updateBulkActions(); }
@@ -748,13 +805,13 @@
         if (!confirm('Delete '+selectedItems.size+' items?')) return;
         var batch = db.batch();
         selectedItems.forEach(function(id){ batch.delete(db.collection('articles').doc(id)); });
-        await batch.commit();
+        try { await batch.commit(); } catch(err) { toast('Error: '+err.message+permHint(err),'error'); return; }
         toast('Deleted!','success'); clearSelection(); loadArticles(); loadDashboard();
     }
     async function bulkPublish() {
         var batch = db.batch();
         selectedItems.forEach(function(id){ batch.update(db.collection('articles').doc(id),{status:'published',updatedAt:TS()}); });
-        await batch.commit();
+        try { await batch.commit(); } catch(err) { toast('Error: '+err.message+permHint(err),'error'); return; }
         toast('Published!','success'); clearSelection(); loadArticles();
     }
 
@@ -769,8 +826,8 @@
             if (!tb) return;
             tb.innerHTML = items.length===0
                 ? '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:2rem">No videos yet</td></tr>'
-                : items.map(function(m){ return `<tr><td><div class="item-title">${m.title}</div><div class="item-excerpt">${m.youtubeUrl||m.url||''}</div></td><td><span class="badge badge-${m.language||'english'}">${m.language||'english'}</span></td><td>${m.createdAt.toLocaleDateString()}</td><td><div class="actions"><button class="action-btn delete" onclick="deleteItem('media','${m.id}')">&#x1F5D1;&#xFE0F;</button></div></td></tr>`; }).join('');
-        } catch(err) { toast('Error loading media: '+err.message,'error'); }
+                : items.map(function(m){ return '<tr><td><div class="item-title">'+esc(m.title)+'</div><div class="item-excerpt">'+esc(m.youtubeUrl||m.url||'')+'</div></td><td><span class="badge badge-'+(m.language||'english')+'">'+(m.language||'english')+'</span></td><td>'+m.createdAt.toLocaleDateString()+'</td><td><div class="actions"><button class="action-btn delete" onclick="deleteItem(\'media\',\''+m.id+'\')">&#x1F5D1;&#xFE0F;</button></div></td></tr>'; }).join('');
+        } catch(err) { toast('Error loading media: '+err.message+permHint(err),'error'); }
     }
 
     async function saveMedia() {
@@ -790,7 +847,7 @@
             if (id) await db.collection('media').doc(id).update(data);
             else    { data.createdAt=TS(); await db.collection('media').add(data); }
             closeModal('mediaModal'); toast('Saved!','success'); loadMedia(); loadDashboard();
-        } catch(err) { toast('Error: '+err.message,'error'); }
+        } catch(err) { toast('Error: '+err.message+permHint(err),'error'); }
     }
 
     // ── Documents ─────────────────────────────────────────────────────────────
@@ -806,12 +863,12 @@
             if (!tb) return;
             tb.innerHTML = docs.length===0
                 ? '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem">No documents yet</td></tr>'
-                : docs.map(function(d){ var sc=d.status==='published'?'badge-published':'badge-draft'; return `<tr><td><div class="item-title">${d.title}</div><div class="item-excerpt">${d.excerpt||''}</div></td><td><span class="badge badge-${d.language||'english'}">${d.language||'english'}</span></td><td><span class="badge ${sc}">${d.status||'draft'}</span></td><td>${d.createdAt.toLocaleDateString()}</td><td><div class="actions"><button class="action-btn" onclick="editDocument('${d.id}')" title="Edit">&#x270F;&#xFE0F;</button><button class="action-btn" onclick="window.open('../pages/document.html?id=${d.id}','_blank')" title="View">&#x1F441;&#xFE0F;</button><button class="action-btn delete" onclick="deleteItem('documents','${d.id}')" title="Delete">&#x1F5D1;&#xFE0F;</button></div></td></tr>`; }).join('');
+                : docs.map(function(d){ var sc=d.status==='published'?'badge-published':'badge-draft'; return '<tr><td><div class="item-title">'+esc(d.title)+'</div><div class="item-excerpt">'+esc(d.excerpt||'')+'</div></td><td><span class="badge badge-'+(d.language||'english')+'">'+(d.language||'english')+'</span></td><td><span class="badge '+sc+'">'+(d.status||'draft')+'</span></td><td>'+d.createdAt.toLocaleDateString()+'</td><td><div class="actions"><button class="action-btn" onclick="editDocument(\''+d.id+'\')" title="Edit">&#x270F;&#xFE0F;</button><button class="action-btn" onclick="window.open(\'../pages/document.html?id='+d.id+'\',\'_blank\')" title="View">&#x1F441;&#xFE0F;</button><button class="action-btn delete" onclick="deleteItem(\'documents\',\''+d.id+'\')" title="Delete">&#x1F5D1;&#xFE0F;</button></div></td></tr>'; }).join('');
             var fl = document.getElementById('filterDocLang');
             var fs = document.getElementById('filterDocStatus');
             if (fl && !fl._bound) { fl.addEventListener('change',loadDocuments); fl._bound=true; }
             if (fs && !fs._bound) { fs.addEventListener('change',loadDocuments); fs._bound=true; }
-        } catch(err) { toast('Error loading documents: '+err.message,'error'); }
+        } catch(err) { toast('Error loading documents: '+err.message+permHint(err),'error'); }
     }
 
     function openDocumentModal() {
@@ -841,7 +898,7 @@
             currentDocImageUrl = d.image || null;
             if (d.image) { document.getElementById('docImageUpload').classList.add('has-image'); document.getElementById('docImageUploadText').innerHTML='<img src="'+d.image+'" alt="Featured">'; }
             openModal('documentModal');
-        } catch(err) { toast('Error: '+err.message,'error'); }
+        } catch(err) { toast('Error: '+err.message+permHint(err),'error'); }
     }
 
     async function saveDocument() {
@@ -861,18 +918,17 @@
             if (id) await db.collection('documents').doc(id).update(data);
             else    { data.createdAt=TS(); await db.collection('documents').add(data); }
             closeModal('documentModal'); toast('Saved!','success'); loadDocuments(); loadDashboard();
-        } catch(err) { toast('Error: '+err.message,'error'); }
+        } catch(err) { toast('Error: '+err.message+permHint(err),'error'); }
     }
 
     function handleDocImageUpload(e) {
         var file = e.target.files[0]; if(!file) return;
-        var reader = new FileReader();
-        reader.onload = function(ev) {
+        compressImage(file, 1200, 0.8, function(data) {
             document.getElementById('docImageUpload').classList.add('has-image');
-            document.getElementById('docImageUploadText').innerHTML = '<img src="'+ev.target.result+'" alt="Preview">';
-            currentDocImageUrl = ev.target.result;
-        };
-        reader.readAsDataURL(file);
+            document.getElementById('docImageUploadText').innerHTML = '<img src="'+data+'" alt="Preview">';
+            currentDocImageUrl = data;
+        });
+        e.target.value = '';
     }
 
     function execDocCmd(cmd,val) { document.execCommand(cmd,false,val||null); document.getElementById('docContent').focus(); }
@@ -886,8 +942,20 @@
             if (!tb) return;
             tb.innerHTML = events.length===0
                 ? '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:2rem">No events yet</td></tr>'
-                : events.map(function(d){ return `<tr><td><div class="item-title">${d.title}</div><div class="item-excerpt">${d.description||''}</div></td><td>${d.date.toLocaleDateString()}</td><td>${d.location||'-'}</td><td><div class="actions"><button class="action-btn" onclick="editEvent('${d.id}')" title="Edit">&#x270F;&#xFE0F;</button><button class="action-btn delete" onclick="deleteItem('events','${d.id}')" title="Delete">&#x1F5D1;&#xFE0F;</button></div></td></tr>`; }).join('');
-        } catch(err) { toast('Error loading events: '+err.message,'error'); }
+                : events.map(function(d){ return '<tr><td><div class="item-title">'+esc(d.title)+'</div><div class="item-excerpt">'+esc(d.description||'')+'</div></td><td>'+d.date.toLocaleDateString()+'</td><td>'+esc(d.location||'-')+'</td><td><div class="actions"><button class="action-btn" onclick="editEvent(\''+d.id+'\')" title="Edit">&#x270F;&#xFE0F;</button><button class="action-btn delete" onclick="deleteItem(\'events\',\''+d.id+'\')" title="Delete">&#x1F5D1;&#xFE0F;</button></div></td></tr>'; }).join('');
+        } catch(err) { toast('Error loading events: '+err.message+permHint(err),'error'); }
+    }
+
+    function openEventModal() {
+        document.getElementById('eventForm').reset();
+        document.getElementById('eventId').value = '';
+        openModal('eventModal');
+    }
+
+    function openMediaModal() {
+        document.getElementById('mediaForm').reset();
+        document.getElementById('mediaId').value = '';
+        openModal('mediaModal');
     }
 
     async function editEvent(id) {
@@ -899,7 +967,7 @@
         document.getElementById('eventLocation').value = d.location || '';
         document.getElementById('eventDesc').value     = d.description || '';
         var dt = d.date?.toDate() || new Date();
-        document.getElementById('eventDate').value = dt.toISOString().split('T')[0];
+        document.getElementById('eventDate').value = dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
         openModal('eventModal');
     }
 
@@ -908,7 +976,7 @@
         var dateVal = document.getElementById('eventDate').value;
         var data    = {
             title:       document.getElementById('eventTitle').value,
-            date:        dateVal ? firebase.firestore.Timestamp.fromDate(new Date(dateVal)) : null,
+            date:        dateVal ? firebase.firestore.Timestamp.fromDate(new Date(dateVal+'T12:00:00')) : null,
             location:    document.getElementById('eventLocation').value,
             description: document.getElementById('eventDesc').value || '',
             updatedAt:   TS()
@@ -918,7 +986,7 @@
             if (id) await db.collection('events').doc(id).update(data);
             else    { data.createdAt=TS(); await db.collection('events').add(data); }
             closeModal('eventModal'); toast('Saved!','success'); loadEvents(); loadDashboard();
-        } catch(err) { toast('Error: '+err.message,'error'); }
+        } catch(err) { toast('Error: '+err.message+permHint(err),'error'); }
     }
 
     // ── Photos ────────────────────────────────────────────────────────────────
@@ -930,8 +998,8 @@
             if (!grid) return;
             grid.innerHTML = photos.length===0
                 ? '<p style="color:var(--muted);grid-column:1/-1;text-align:center;padding:2rem;">No photos yet.</p>'
-                : photos.map(function(p){ return `<div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--border)"><img src="${p.image}" style="width:100%;height:140px;object-fit:cover;display:block;" loading="lazy"><div style="position:absolute;top:6px;right:6px"><button onclick="deleteItem('photos','${p.id}')" style="width:28px;height:28px;border-radius:6px;border:none;background:rgba(192,39,29,0.9);color:white;cursor:pointer;">&#x1F5D1;</button></div>${p.title?`<div style="padding:6px 8px;font-size:.78rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.title}</div>`:''}</div>`; }).join('');
-        } catch(err) { toast('Error loading photos: '+err.message,'error'); }
+                : photos.map(function(p){ return '<div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--border)"><img src="'+p.image+'" style="width:100%;height:140px;object-fit:cover;display:block;" loading="lazy"><div style="position:absolute;top:6px;right:6px"><button onclick="deleteItem(\'photos\',\''+p.id+'\')" style="width:28px;height:28px;border-radius:6px;border:none;background:rgba(192,39,29,0.9);color:white;cursor:pointer;">&#x1F5D1;</button></div>'+(p.title?'<div style="padding:6px 8px;font-size:.78rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(p.title)+'</div>':'')+'</div>'; }).join('');
+        } catch(err) { toast('Error loading photos: '+err.message+permHint(err),'error'); }
     }
 
     function openPhotoModal() {
@@ -946,22 +1014,12 @@
 
     function handlePhotoUpload(e) {
         var file=e.target.files[0]; if(!file) return;
-        var img=new Image(), reader=new FileReader();
-        reader.onload=function(ev){
-            img.onload=function(){
-                var MAX=1200,canvas=document.createElement('canvas');
-                var w=img.width,h=img.height;
-                if(w>MAX||h>MAX){ if(w>h){h=Math.round(h*(MAX/w));w=MAX;}else{w=Math.round(w*(MAX/h));h=MAX;} }
-                canvas.width=w; canvas.height=h;
-                canvas.getContext('2d').drawImage(img,0,0,w,h);
-                var data=canvas.toDataURL('image/jpeg',0.82);
-                currentPhotoImageUrl=data;
-                document.getElementById('photoImageUpload').classList.add('has-image');
-                document.getElementById('photoImageText').innerHTML='<img src="'+data+'" alt="Preview">';
-            };
-            img.src=ev.target.result;
-        };
-        reader.readAsDataURL(file);
+        compressImage(file, 1200, 0.82, function(data) {
+            currentPhotoImageUrl=data;
+            document.getElementById('photoImageUpload').classList.add('has-image');
+            document.getElementById('photoImageText').innerHTML='<img src="'+data+'" alt="Preview">';
+        });
+        e.target.value = '';
     }
 
     async function savePhoto() {
@@ -975,7 +1033,7 @@
         try {
             await db.collection('photos').add(data);
             closeModal('photoModal'); toast('Photo saved!','success'); loadPhotos(); loadDashboard();
-        } catch(err) { toast('Error: '+err.message,'error'); }
+        } catch(err) { toast('Error: '+err.message+permHint(err),'error'); }
     }
 
     // ── Messages ──────────────────────────────────────────────────────────────
@@ -990,9 +1048,9 @@
                 : msgs.map(function(m){
                     var unread=!m.read;
                     var ts=unread?'font-weight:700':'';
-                    return `<tr style="${unread?'background:rgba(192,39,29,0.04)':''}"><td><div class="item-title" style="${ts}">${m.name||'—'}</div></td><td style="font-size:.85rem">${m.email||'—'}</td><td><div class="item-excerpt" style="max-width:200px;${ts}">${m.subject||m.message?.slice(0,60)||'—'}</div></td><td style="font-size:.82rem">${m.sentAt.toLocaleDateString()}</td><td>${unread?'<span style="background:rgba(192,39,29,0.15);color:#C0271D;padding:.2rem .5rem;border-radius:4px;font-size:.75rem;font-weight:700;">New</span>':'<span style="color:var(--muted);font-size:.78rem">Read</span>'}</td><td><div class="actions"><button class="action-btn" onclick="viewMessage('${m.id}')" title="View">&#x1F441;&#xFE0F;</button><button class="action-btn delete" onclick="deleteItem('messages','${m.id}')" title="Delete">&#x1F5D1;&#xFE0F;</button></div></td></tr>`;
+                    return '<tr style="'+(unread?'background:rgba(192,39,29,0.04)':'')+'"><td><div class="item-title" style="'+ts+'">'+esc(m.name||'—')+'</div></td><td style="font-size:.85rem">'+esc(m.email||'—')+'</td><td><div class="item-excerpt" style="max-width:200px;'+ts+'">'+esc(m.subject||m.message?.slice(0,60)||'—')+'</div></td><td style="font-size:.82rem">'+m.sentAt.toLocaleDateString()+'</td><td>'+(unread?'<span style="background:rgba(192,39,29,0.15);color:#C0271D;padding:.2rem .5rem;border-radius:4px;font-size:.75rem;font-weight:700;">New</span>':'<span style="color:var(--muted);font-size:.78rem">Read</span>')+'</td><td><div class="actions"><button class="action-btn" onclick="viewMessage(\''+m.id+'\')" title="View">&#x1F441;&#xFE0F;</button><button class="action-btn delete" onclick="deleteItem(\'messages\',\''+m.id+'\')" title="Delete">&#x1F5D1;&#xFE0F;</button></div></td></tr>';
                 }).join('');
-        } catch(err) { toast('Error loading messages: '+err.message,'error'); }
+        } catch(err) { toast('Error loading messages: '+err.message+permHint(err),'error'); }
     }
 
     async function viewMessage(id) {
@@ -1000,11 +1058,7 @@
         if (!snap.exists) return;
         var m = snap.data(), sentAt = m.sentAt?.toDate()||new Date();
         if (!m.read) await db.collection('messages').doc(id).update({read:true});
-        alert(`From: ${m.name||'—'} <${m.email||'—'}>
-Subject: ${m.subject||'—'}
-Date: ${sentAt.toLocaleString()}
-
-${m.message||'—'}`);
+        alert('From: '+(m.name||'—')+' <'+(m.email||'—')+'>\nSubject: '+(m.subject||'—')+'\nDate: '+sentAt.toLocaleString()+'\n\n'+(m.message||'—'));
         loadMessages(); loadDashboard();
     }
 
@@ -1017,14 +1071,14 @@ ${m.message||'—'}`);
             if (!tb) return;
             tb.innerHTML = subs.length===0
                 ? '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:2rem">No subscribers yet</td></tr>'
-                : subs.map(function(s){ return `<tr><td style="font-weight:500">${s.email}</td><td style="font-size:.85rem">${s.source||'—'}</td><td style="font-size:.85rem">${s.subscribedAt.toLocaleDateString()}</td><td><div class="actions"><button class="action-btn delete" onclick="deleteItem('subscribers','${s.id}')" title="Remove">&#x1F5D1;&#xFE0F;</button></div></td></tr>`; }).join('');
-        } catch(err) { toast('Error loading subscribers: '+err.message,'error'); }
+                : subs.map(function(s){ return '<tr><td style="font-weight:500">'+esc(s.email)+'</td><td style="font-size:.85rem">'+esc(s.source||'—')+'</td><td style="font-size:.85rem">'+s.subscribedAt.toLocaleDateString()+'</td><td><div class="actions"><button class="action-btn delete" onclick="deleteItem(\'subscribers\',\''+s.id+'\')" title="Remove">&#x1F5D1;&#xFE0F;</button></div></td></tr>'; }).join('');
+        } catch(err) { toast('Error loading subscribers: '+err.message+permHint(err),'error'); }
     }
 
     async function exportSubscribers() {
         var snap = await db.collection('subscribers').orderBy('subscribedAt','desc').get();
         var rows = ['Email,Source,Date'];
-        snap.docs.forEach(function(d){ var s=d.data(),dt=s.subscribedAt?.toDate()||new Date(); rows.push(s.email+','+(s.source||'')+','+dt.toISOString().split('T')[0]); });
+        snap.docs.forEach(function(d){ var s=d.data(),dt=s.subscribedAt?.toDate()||new Date(); rows.push('"'+String(s.email||'').replace(/"/g,'""')+'","'+String(s.source||'').replace(/"/g,'""')+'",'+dt.toISOString().split('T')[0]); });
         var blob = new Blob([rows.join('\n')],{type:'text/csv'});
         var url  = URL.createObjectURL(blob);
         var a    = document.createElement('a');
@@ -1045,7 +1099,7 @@ ${m.message||'—'}`);
             else if (currentPage==='photos')      loadPhotos();
             else if (currentPage==='messages')    loadMessages();
             else if (currentPage==='subscribers') loadSubscribers();
-        } catch(err) { toast('Error: '+err.message,'error'); }
+        } catch(err) { toast('Error: '+err.message+permHint(err),'error'); }
     }
 
     async function exportData() {
@@ -1060,6 +1114,40 @@ ${m.message||'—'}`);
         var a    = document.createElement('a');
         a.href=url; a.download='dmlek-backup-'+new Date().toISOString().split('T')[0]+'.json';
         a.click(); URL.revokeObjectURL(url); toast('Exported!','success');
+    }
+
+    function importData(e) {
+        var file = e.target.files[0]; if (!file) return;
+        var reader = new FileReader();
+        reader.onload = async function(ev) {
+            var data;
+            try { data = JSON.parse(ev.target.result); } catch(err) { toast('That file is not valid JSON','error'); return; }
+            if (!confirm('Import this backup? Items with the same ID will be overwritten.')) return;
+            var cols = ['articles','media','documents','events','photos'];
+            var total = 0;
+            try {
+                for (var i=0; i<cols.length; i++) {
+                    var items = Array.isArray(data[cols[i]]) ? data[cols[i]] : [];
+                    for (var j=0; j<items.length; j++) {
+                        var item = Object.assign({}, items[j]);
+                        var id = item.id; delete item.id;
+                        // Exported timestamps look like {seconds, nanoseconds}; turn them back into Timestamps
+                        Object.keys(item).forEach(function(k){
+                            var v = item[k];
+                            if (v && typeof v === 'object' && typeof v.seconds === 'number' && typeof v.nanoseconds === 'number')
+                                item[k] = new firebase.firestore.Timestamp(v.seconds, v.nanoseconds);
+                        });
+                        if (id) await db.collection(cols[i]).doc(id).set(item);
+                        else    await db.collection(cols[i]).add(item);
+                        total++;
+                    }
+                }
+                toast('Imported '+total+' items','success');
+                navigateTo(currentPage);
+            } catch(err) { toast('Import stopped after '+total+' items: '+err.message+permHint(err),'error'); }
+        };
+        reader.readAsText(file);
+        e.target.value = '';
     }
 
     // ── Modals ────────────────────────────────────────────────────────────────
