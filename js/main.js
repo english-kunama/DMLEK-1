@@ -4,12 +4,12 @@
    ======================================== */
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCFUzAQucspGeL9e580ha0t9ajmibtZYVU",
-    authDomain: "dmlek-5e41d.firebaseapp.com",
-    projectId: "dmlek-5e41d",
-    storageBucket: "dmlek-5e41d.firebasestorage.app",
-    messagingSenderId: "776258229369",
-    appId: "1:776258229369:web:19b757e38f79156f91f0a8"
+    apiKey: "AIzaSyD6YU7dz2HNGXSpxa9t-wu7ckkbq7cKuP8",
+    authDomain: "dmlek-f8f72.firebaseapp.com",
+    projectId: "dmlek-f8f72",
+    storageBucket: "dmlek-f8f72.firebasestorage.app",
+    messagingSenderId: "992609136555",
+    appId: "1:992609136555:web:19b757e38f79156f91f0a8"
 };
 
 let db, auth;
@@ -187,16 +187,15 @@ function setLanguage(lang) {
 async function fetchArticles(options = {}) {
     const { language, limit = 50, status = 'published' } = options;
     try {
-        let q = db.collection('articles')
-            .where('status', '==', status)
-            .orderBy('createdAt', 'desc')
-            .limit(limit);
-        if (language && language !== 'all') q = q.where('language', '==', language);
-        const snap = await q.get();
-        const results = snap.docs.map(d => ({
+        // Filter by status only (no composite index needed), then sort/filter in the browser
+        const snap = await db.collection('articles').where('status', '==', status).get();
+        let results = snap.docs.map(d => ({
             id: d.id, ...d.data(),
             createdAt: d.data().createdAt?.toDate() || new Date()
         }));
+        if (language && language !== 'all') results = results.filter(a => a.language === language);
+        results.sort((a, b) => b.createdAt - a.createdAt);
+        results = results.slice(0, limit);
         window._dmlek_articlesCache = results;
         return results;
     } catch (e) {
@@ -236,14 +235,13 @@ async function fetchMedia(options = {}) {
 async function fetchDocuments(options = {}) {
     const { limit = 50 } = options;
     try {
+        // Filter by status only (no composite index needed), then sort in the browser
         const snap = await db.collection('documents')
-            .where('status', '==', 'published')
-            .orderBy('createdAt', 'desc')
-            .limit(limit).get();
+            .where('status', '==', 'published').get();
         return snap.docs.map(d => ({
             id: d.id, ...d.data(),
             createdAt: d.data().createdAt?.toDate() || new Date()
-        }));
+        })).sort((a, b) => b.createdAt - a.createdAt).slice(0, limit);
     } catch (e) {
         console.error('fetchDocuments:', e);
         return [];
